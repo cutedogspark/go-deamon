@@ -24,6 +24,10 @@ Run test command
 for i in {1..4}; do curl localhost:8000/work -d name=$USER -d delay=$(expr $i % 11)s; done
 ```
 
+### Start/Stop
+> <http://localhost:8000/start>
+
+> <http://localhost:8000/stop>
 
 ## Usage
 ```go
