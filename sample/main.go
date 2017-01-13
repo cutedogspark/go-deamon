@@ -18,25 +18,13 @@ var (
 	HTTPAddr = flag.String("http", "127.0.0.1:8000", "Address to listen for HTTP requests on")
 )
 
-var QWorker gworker.WorkerManage
-
 func Collector(c echo.Context) error {
-	delay, err := time.ParseDuration(c.FormValue("delay"))
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, "Bad delay value: " + err.Error())
-	}
+	x := gworker.NewJob()
+	x.SetJobType(gworker.JobTypeCMD)
+	x.At(time.Now().UTC().Add(5 * time.Second).Format("2006-01-02 15:04:05"))
+	x.SetJobContext("ls")
 
-	if delay.Seconds() < 1 || delay.Seconds() > 10 {
-		return c.JSON(http.StatusBadRequest, "The delay must be between 1 and 10 seconds.")
-	}
-
-	name := c.FormValue("name")
-	if name == "" {
-		return c.JSON(http.StatusBadRequest, "You must specify a name")
-	}
-
-	work := gworker.Job{Name: name, Delay: delay}
-	status := QWorker.PutWorkQueue(work)
+	status := gworker.Service.PutWorkQueue(x)
 	if !status{
 		return c.JSON(http.StatusInternalServerError, "WorkerQueue Error")
 	}
@@ -47,8 +35,10 @@ func Collector(c echo.Context) error {
 func main() {
 	flag.Parse()
 
-	QWorker = gworker.InitWorker(*NWorkers)
-	QWorker.Start()
+	/* GWorker Init & close */
+	gworker.InitWorker(*NWorkers)
+	gworker.Service.Start()
+	defer gworker.Service.Stop()
 
 	e := echo.New()
 	//e.Use(middleware.Logger())
@@ -59,17 +49,13 @@ func main() {
 	e.POST("/work", Collector)
 
 	e.GET("/", func(c echo.Context) error {
-		QWorker.Stop()
 		return c.String(http.StatusOK, "Hello, World!")
 	})
-	e.GET("/stop", func(c echo.Context) error {
-		QWorker.Stop()
-		return c.String(http.StatusOK, "Stop!!!")
+	e.GET("/ping", func(c echo.Context) error {
+		return c.String(http.StatusOK, "")
 	})
-	e.GET("/start", func(c echo.Context) error {
-		QWorker.Start()
-		return c.String(http.StatusOK, "Start!!!")
-	})
+
+	e.GET("/add", Collector)
 
 	e.Logger.Fatal(e.Start(*HTTPAddr))
 }

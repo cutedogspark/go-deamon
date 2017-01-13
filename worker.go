@@ -2,7 +2,7 @@ package gworker
 
 import (
 	"fmt"
-	"time"
+	//"time"
 )
 
 type Worker struct {
@@ -30,9 +30,8 @@ func (w *Worker) Start() {
 			select {
 			case w.WorkerQueue <- w.Work:
 				work := <-w.Work
-				time.Sleep(work.Delay)
-				fmt.Printf("[Worker-%d]: Hello, %s!\n", w.ID, work.Name)
-
+				fmt.Printf("[Worker-%d]: Running cmd : %s!\n", w.ID, work.context)
+				work.Start()
 			case <-w.QuitChan:
 				return
 			}

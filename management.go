@@ -1,5 +1,7 @@
 package gworker
 
+var Service = WorkerManage{}
+
 type WorkerManage struct {
 	Status         bool
 	WorkerCnt      int
@@ -16,19 +18,18 @@ func (c *WorkerManage) AddItem(item *Worker) []*Worker {
 }
 
 func InitWorker(worker int) WorkerManage {
-	c := WorkerManage{}
-	if worker > 0 {
-		c.WorkerCnt = worker
-	}
-	c.WorkerQueue = make(chan chan Job, c.WorkerCnt)
-	c.WorkQueue = make(chan Job, c.WorkQueueCnt)
-	c.workQueueAbort = make(chan bool)
-	for i := 0; i < c.WorkerCnt; i++ {
-		worker := NewWorker(i+1, c.WorkerQueue)
-		c.AddItem(&worker)
-	}
 
-	return c
+	if worker > 0 {
+		Service.WorkerCnt = worker
+	}
+	Service.WorkerQueue = make(chan chan Job, Service.WorkerCnt)
+	Service.WorkQueue = make(chan Job, Service.WorkQueueCnt)
+	Service.workQueueAbort = make(chan bool)
+	for i := 0; i < Service.WorkerCnt; i++ {
+		worker := NewWorker(i+1, Service.WorkerQueue)
+		Service.AddItem(&worker)
+	}
+	return Service
 }
 
 func (w *WorkerManage) Start() {
